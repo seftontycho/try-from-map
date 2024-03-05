@@ -80,8 +80,6 @@ fn generate_from_impl(struct_name: &syn::Ident, fields: &[syn::Field]) -> TokenS
 
             let err_msg = format!("Field {} not found", ident);
 
-            println!("ident_str: {}", ident_str);
-
             quote! {
                 let #ident = map.get(#ident_str).ok_or_else(|| #err_msg)?.parse()?
             }
