@@ -13,7 +13,8 @@ use try_from_map::TryFromMap;
 #[derive(TryFromMap, Debug)]
 struct Foo {
    a: i32,
-   b: f32,   c: Option<bool>,
+   b: f32,
+   c: Option<bool>,
 }
 
 let map = std::collections::HashMap::from([
