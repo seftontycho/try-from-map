@@ -1,6 +1,6 @@
 // Test on all field types that can be parsed from String
 
-use from_map::TryFromMap;
+use try_from_map::TryFromMap;
 
 #[derive(TryFromMap, Debug)]
 struct Foo {

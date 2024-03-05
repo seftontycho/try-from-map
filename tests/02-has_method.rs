@@ -1,4 +1,4 @@
-use from_map::TryFromMap;
+use try_from_map::TryFromMap;
 
 #[derive(TryFromMap, Debug)]
 struct Foo {

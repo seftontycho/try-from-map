@@ -14,7 +14,7 @@ use syn::{parse, parse_macro_input, DeriveInput};
 /// # Example
 ///
 /// ```rust
-/// use from_map::TryFromMap;
+/// use try_from_map::TryFromMap;
 ///
 /// #[derive(TryFromMap, Debug)]
 /// struct Foo {

@@ -1,5 +1,5 @@
 [package]
-name = "from-map"
+name = "try-from-map"
 version = "0.1.0"
 edition = "2021"
 description = "A derive macro for converting a HashMap<String, String> into a struct"
