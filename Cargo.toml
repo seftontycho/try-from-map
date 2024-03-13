@@ -1,6 +1,6 @@
 [package]
 name = "try-from-map"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "A derive macro for converting a HashMap<String, String> into a struct"
 repository = "https://github.com/seftontycho/try-from-map"
