@@ -6,4 +6,5 @@ struct Foo {
     baz: String,
 }
 
-fn main() {}
+#[test]
+fn parse() {}

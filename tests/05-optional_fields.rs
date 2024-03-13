@@ -6,7 +6,8 @@ struct Foo {
     baz: Option<String>,
 }
 
-fn main() {
+#[test]
+fn optional_fields() {
     let map = std::collections::HashMap::from([("bar".to_string(), "bar".to_string())]);
 
     let foo = Foo::try_from(map).unwrap();

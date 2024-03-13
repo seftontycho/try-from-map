@@ -1,15 +1,18 @@
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
-use syn::{parse, parse_macro_input, DeriveInput};
+use quote::quote;
+use syn::{parse_macro_input, DeriveInput};
+
+mod field;
+mod generation;
 
 /// Derive `TryFrom<HashMap<String, String>>` for a struct.
 ///
 /// This macro will generate an implementation of `TryFrom<HashMap<String, String>>` for the annotated struct.
 /// It will attempt to parse each field from the map, and return an error if any field is missing or cannot be parsed.
-/// Fields of type Option<T> are supported, and will be set to None if the field is missing from the map.
+/// Fields of type `Option<T>` are supported, and will be set to None if the field is missing from the map.
 ///
-/// Currently only supports structs with named fields that impl FromStr.
-/// Accepting all types that implement serde::Deserialize is a future goal.
+/// Supports structs with named fields that either `impl FromStr` or `serde::Deserialize`.
+/// Fields that implement `serde::Deserialize` can be annotated with `#[serde_json]` to parse the value as JSON.
 ///
 /// # Example
 ///
@@ -21,12 +24,15 @@ use syn::{parse, parse_macro_input, DeriveInput};
 ///    a: i32,
 ///    b: f32,
 ///    c: Option<bool>,
+///    #[serde_json] // Parse as JSON as Vec<f64> does not impl FromStr
+///    d: Vec<f64>,
 /// }
 ///
 ///
 /// let map = std::collections::HashMap::from([
 ///     ("a".to_string(), "42".to_string()),
 ///     ("b".to_string(), "3.14".to_string()),
+///     ("d".to_string(), "[3.14, 2.71]".to_string()),
 /// ]);
 ///
 /// let foo = Foo::try_from(map).unwrap();
@@ -36,9 +42,10 @@ use syn::{parse, parse_macro_input, DeriveInput};
 /// assert_eq!(foo.a, 42);
 /// assert_eq!(foo.b, 3.14);
 /// assert_eq!(foo.c, None);
+/// assert_eq!(foo.d, vec![3.14, 2.71]);
 ///
 /// ```
-#[proc_macro_derive(TryFromMap)]
+#[proc_macro_derive(TryFromMap, attributes(serde_json))]
 pub fn derive_try_from_map(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let parsed = parse_macro_input!(input as DeriveInput);
     let output = _derive_try_from_map(parsed);
@@ -51,89 +58,11 @@ pub fn derive_try_from_map(input: proc_macro::TokenStream) -> proc_macro::TokenS
 
 fn _derive_try_from_map(parsed: DeriveInput) -> syn::Result<TokenStream> {
     let struct_name = parsed.ident.clone();
-    let fields = parse_fields(&parsed)?;
+    let fields = crate::field::parse_fields(&parsed)?;
 
-    let from_impl = generate_from_impl(&struct_name, &fields);
+    let from_impl = crate::generation::generate_from_impl(&struct_name, &fields);
 
     Ok(quote! {
         #from_impl
     })
-}
-
-fn generate_from_impl(struct_name: &syn::Ident, fields: &[syn::Field]) -> TokenStream {
-    let field_idents = fields.iter().map(|f| f.ident.clone().unwrap());
-
-    let extract_fields = fields
-        .iter()
-        .map(|field_ident| {
-            let ident = field_ident.ident.as_ref().unwrap();
-            let ident_str = format!("{}", ident);
-
-            if is_optional_field(field_ident) {
-                return quote! {
-                    let #ident = match map.get(#ident_str) {
-                        Some(value) => Some(value.parse()?),
-                        None => None,
-                    }
-                };
-            }
-
-            let err_msg = format!("Field {} not found", ident);
-
-            quote! {
-                let #ident = map.get(#ident_str).ok_or_else(|| #err_msg)?.parse()?
-            }
-        })
-        .collect::<Vec<_>>();
-
-    quote! {
-        impl std::convert::TryFrom<std::collections::HashMap<String, String>> for #struct_name {
-            type Error = std::boxed::Box<dyn std::error::Error>;
-
-            fn try_from(map: std::collections::HashMap<String, String>) -> Result<Self, Self::Error> {
-                #(#extract_fields;)*
-
-                Ok(Self {
-                    #(#field_idents,)*
-                })
-            }
-        }
-    }
-}
-
-fn parse_fields(parsed: &DeriveInput) -> syn::Result<Vec<syn::Field>> {
-    match &parsed.data {
-        syn::Data::Struct(data) => match &data.fields {
-            syn::Fields::Named(fields) => Ok(fields.named.iter().cloned().collect()),
-            _ => Err(syn::Error::new_spanned(
-                parsed,
-                "Only named fields are supported",
-            )),
-        },
-        _ => Err(syn::Error::new_spanned(
-            parsed,
-            "Only structs are supported",
-        )),
-    }
-}
-
-fn is_optional_field(field: &syn::Field) -> bool {
-    let path_segments = match &field.ty {
-        syn::Type::Path(syn::TypePath {
-            qself: None,
-            path: syn::Path { segments, .. },
-        }) => segments,
-        _ => return false,
-    };
-
-    let segment = match path_segments.first() {
-        Some(segment) => segment,
-        None => return false,
-    };
-
-    if segment.ident != "Option" {
-        return false;
-    }
-
-    true
 }

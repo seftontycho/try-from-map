@@ -1,5 +1,3 @@
-// Test on all field types that can be parsed from String
-
 use try_from_map::TryFromMap;
 
 #[derive(TryFromMap, Debug)]
@@ -8,7 +6,8 @@ struct Foo {
     baz: f32,
 }
 
-fn main() {
+#[test]
+fn all_fields() {
     let map = std::collections::HashMap::from([
         ("bar".to_string(), "-52".to_string()),
         ("baz".to_string(), "6.9".to_string()),

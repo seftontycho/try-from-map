@@ -1,12 +1,10 @@
 use try_from_map::TryFromMap;
 
 #[derive(TryFromMap, Debug)]
-struct Foo {
-    bar: String,
-    baz: String,
-}
+struct Foo {}
 
-fn main() {
+#[test]
+fn has_method() {
     let map = std::collections::HashMap::new();
     let foo = Foo::try_from(map);
 

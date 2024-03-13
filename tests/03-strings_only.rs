@@ -6,7 +6,8 @@ struct Foo {
     baz: String,
 }
 
-fn main() {
+#[test]
+fn strings_only() {
     let map = std::collections::HashMap::from([
         ("bar".to_string(), "bar".to_string()),
         ("baz".to_string(), "baz".to_string()),
